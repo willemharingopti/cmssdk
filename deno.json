@@ -1,0 +1,25 @@
+{
+   "tasks": {
+      "generate": "deno -A src/openapi/generate.ts --path=./generated/openapispec.ts",
+      "example": "deno -A example.ts"
+   },
+   "imports": {
+      "@std/cli": "jsr:@std/cli@^1.0.30",
+      "@std/fs": "jsr:@std/fs@^1.0.24",
+      "dotenv": "npm:dotenv@^17.4.2",
+      "openapi-fetch": "npm:openapi-fetch@^0.17.0",
+      "openapi-typescript": "npm:openapi-typescript@^7.13.0"
+   },
+   "lock": false,
+   "fmt": {
+      "semiColons": false,
+      "lineWidth": 200,
+      "indentWidth": 3,
+      "useTabs": false
+   },   
+   "name": "@willemharingopti/cmssdk",
+   
+   "version": "0.0.9",
+   "exports": "./src/sdk.ts",
+   "license": "MIT"
+}
