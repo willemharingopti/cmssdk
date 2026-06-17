@@ -18,19 +18,6 @@ export type BindingQueryParam = { pageIndex?: number; pageSize?: number }
 
 export interface BindingsApi {
   (): {
-    list: (query?: BindingQueryParam) => Promise<BindingListResponse>
-    post: (body: BindingCreateRequest) => Promise<BindingCreateResponse>
-  }
-  (key: BindingKeyParam): {
-    get: () => Promise<BindingGetResponse>
-    patch: (body: BindingPatchRequest) => Promise<BindingPatchResponse>
-    delete: () => Promise<BindingDeleteResponse | void>
-  }
-}
-
-export function createBindings(client: TypedSdkClient): BindingsApi {
-  // Collection-level operations
-  function bindings(): {
     /**
      * List content type bindings.
      *
@@ -49,9 +36,7 @@ export function createBindings(client: TypedSdkClient): BindingsApi {
      */
     post: (body: BindingCreateRequest) => Promise<BindingCreateResponse>
   }
-
-  // Item-level operations
-  function bindings(key: BindingKeyParam): {
+  (key: BindingKeyParam): {
     /**
      * Retrieves a specific content type binding by key.
      *
@@ -75,6 +60,24 @@ export function createBindings(client: TypedSdkClient): BindingsApi {
      * @returns Promise resolving to deletion confirmation or void
      * @throws Error if not found (404) or deletion fails
      */
+    delete: () => Promise<BindingDeleteResponse | void>
+  }
+}
+
+export function createBindings(client: TypedSdkClient): BindingsApi {
+  // Collection-level operations
+  function bindings(): {
+    list: (query?: BindingQueryParam) => Promise<BindingListResponse>
+
+    post: (body: BindingCreateRequest) => Promise<BindingCreateResponse>
+  }
+
+  // Item-level operations
+  function bindings(key: BindingKeyParam): {
+    get: () => Promise<BindingGetResponse>
+
+    patch: (body: BindingPatchRequest) => Promise<BindingPatchResponse>
+
     delete: () => Promise<BindingDeleteResponse | void>
   }
 
@@ -131,3 +134,5 @@ export function createBindings(client: TypedSdkClient): BindingsApi {
 
   return bindings
 }
+
+export type iBindings = BindingsApi

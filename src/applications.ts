@@ -25,21 +25,9 @@ type ApplicationCreateRequest = Omit<RawApplicationCreate, "type"> & {
 
 type ApplicationCreateResponse = paths["/applications"]["post"]["responses"][201]["content"]["application/json"]
 
+
 export interface ApplicationsApi {
   (): {
-    list: (query?: ApplicationQueryParam) => Promise<ApplicationsListResponse>
-    post: (body: ApplicationCreateRequest) => Promise<ApplicationCreateResponse>
-  }
-  (key: ApplicationKeyParam): {
-    get: () => Promise<ApplicationGetResponse>
-    delete: () => Promise<ApplicationDeleteResponse | void>
-    patch: (body: ApplicationPatchRequest) => Promise<ApplicationPatchResponse>
-  }
-}
-
-export function createApplications(client: TypedSdkClient): ApplicationsApi {
-  // Collection-level operations
-  function applications(): {
     /**
      * List applications.
      *
@@ -62,9 +50,7 @@ export function createApplications(client: TypedSdkClient): ApplicationsApi {
      */
     post: (body: ApplicationCreateRequest) => Promise<ApplicationCreateResponse>
   }
-
-  // Item-level operations
-  function applications(key: ApplicationKeyParam): {
+  (key: ApplicationKeyParam): {
     /**
      * Get application.
      *
@@ -94,6 +80,24 @@ export function createApplications(client: TypedSdkClient): ApplicationsApi {
      * @returns Promise resolving to the updated application
      * @throws Error if not found (404), precondition fails (412), or validation fails
      */
+    patch: (body: ApplicationPatchRequest) => Promise<ApplicationPatchResponse>
+  }
+}
+
+export function createApplications(client: TypedSdkClient): ApplicationsApi {
+  // Collection-level operations
+  function applications(): {
+    list: (query?: ApplicationQueryParam) => Promise<ApplicationsListResponse>
+
+    post: (body: ApplicationCreateRequest) => Promise<ApplicationCreateResponse>
+  }
+
+  // Item-level operations
+  function applications(key: ApplicationKeyParam): {
+    get: () => Promise<ApplicationGetResponse>
+
+    delete: () => Promise<ApplicationDeleteResponse | void>
+
     patch: (body: ApplicationPatchRequest) => Promise<ApplicationPatchResponse>
   }
 
@@ -149,3 +153,5 @@ export function createApplications(client: TypedSdkClient): ApplicationsApi {
 
   return applications
 }
+
+export type iApplication = ApplicationsApi

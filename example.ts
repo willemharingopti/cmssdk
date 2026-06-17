@@ -6,14 +6,26 @@ import { keyFromEntryPoint } from "./src/utils.ts"
 if (import.meta.main) {
    const client = cmssdk()
    
-   console.log(await client.applications().list())  // list all applications
+   //console.log(await client.applications().list())  // list all applications
 
-   console.log(await client.applications().list({pageSize: 2})) // list the first 2 appliciations
-
+   //console.log(await client.applications().list({pageSize: 2})) // list the first 2 appliciations
+   
    const myapp = await client.applications({key: "clean"}).get() // get the application with the key: clean
-   console.log(myapp)
+   //console.log(myapp)
    console.log(await client.content({key: keyFromEntryPoint(myapp.entryPoint)}).items())
+/*
+   const homepage = await client.content().post({
+      contentType: "BlankExperience",
+      initialVersion: {
+         displayName: "home",
+      }
 
+   })
+   await client.applications().post({
+      displayName: "from api",
+      entryPoint: homepage.key!
+   })
+*/ 
 }
 
 

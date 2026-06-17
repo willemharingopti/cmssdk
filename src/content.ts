@@ -73,81 +73,272 @@ export type ContentLocaleParam = { key: string; locale: string }
 
 export interface ContentApi {
   (): {
+    /**
+     * Creates a new content item.
+     *
+     * @param body - Content item data to create
+     * @param body.key - Unique identifier for the content (optional; auto-generated if not provided)
+     * @param body.contentType - ContentType key for this item (required)
+     * @param body.container - Optional container key for hierarchical content
+     * @param body.owner - Optional owner key for asset relationships
+     * @param body.initialVersion - Optional initial version payload (e.g. localized field data) for the new content
+     * @returns Promise resolving to the created content node
+     * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
+     *
+     * @example
+     * const newContent = await content().post({
+     *   contentType: "article",
+     *   initialVersion: { data: { title: "My Article" } }
+     * })
+     */
     post: (body: ContentCreateRequest) => Promise<ContentCreateResponse>
+
+    /**
+     * Lists all content versions across all content items with optional filtering.
+     *
+     * @param params - Query parameters for filtering and pagination
+     * @param params.locales - Optional list of locales to include (e.g., ['en', 'sv', 'NEUTRAL'])
+     * @param params.statuses - Optional list of version statuses to include (e.g., ['draft', 'published'])
+     * @param params.pageIndex - Zero-based page index for pagination
+     * @param params.pageSize - Maximum items per page
+     * @returns Promise resolving to a page of content versions
+     * @throws Error on 401 (Unauthorized), 403 (Forbidden), 429 (TooManyRequests), 500 (Server error)
+     *
+     * @example
+     * const versions = await content().list({
+     *   locales: ['en'],
+     *   statuses: ['published'],
+     *   pageSize: 20
+     * })
+     */
     list: (params?: ContentListQueryParams) => Promise<ContentAllVersionsResponse>
   }
   (params: ContentVersionParam): {
+    /**
+     * Retrieves a specific version of this content item.
+     *
+     * @returns Promise resolving to the version data
+     * @throws Error if the version is not found (404) or request fails
+     *
+     * @example
+     * const version = await content({ key: "article-123", version: "v1" }).get()
+     */
     get: () => Promise<ContentVersionResponse>
+
+    /**
+     * Partially updates a specific version.
+     *
+     * @param body - Fields to update
+     * @returns Promise resolving to the updated version
+     * @throws Error if the version is not found (404) or update fails
+     */
     patch: (body: ContentPatchVersionRequest) => Promise<ContentPatchVersionResponse>
+
+    /**
+     * Deletes a specific version.
+     *
+     * @returns Promise resolving to deletion confirmation or void
+     * @throws Error if the version is not found (404) or deletion fails
+     */
     delete: () => Promise<ContentDeleteVersionResponse | void>
+
+    /**
+     * Gets media associated with this version.
+     *
+     * The endpoint streams raw media (no JSON body), so the raw `Response` is returned —
+     * read it via `.blob()`, `.arrayBuffer()`, `.body`, or inspect `.headers`/`.url`.
+     *
+     * @returns Promise resolving to the raw fetch Response for the media
+     * @throws Error if media is not found (404) or request fails
+     */
     media: () => Promise<ContentMediaResponse>
+
+    /**
+     * Gets preview URLs for this version.
+     *
+     * @returns Promise resolving to preview URLs for different applications
+     * @throws Error if previews are not available (404) or request fails
+     */
     previews: () => Promise<ContentPreviewsResponse>
+
+    /**
+     * Publishing workflow operations for this version.
+     */
     workflow: () => {
+      /**
+       * Moves version to ready state (ready for review/publishing).
+       *
+       * @returns Promise resolving to the version in ready state
+       * @throws Error if the version is not found (404) or workflow fails
+       */
       ready: () => Promise<ContentReadyResponse>
+
+      /**
+       * Approves a version (moves to publishable state).
+       *
+       * @returns Promise resolving to the approved version
+       * @throws Error if the version is not found (404) or approval fails
+       */
       approve: () => Promise<ContentApproveResponse>
+
+      /**
+       * Rejects a version (returns to draft).
+       *
+       * @returns Promise resolving to the rejected version
+       * @throws Error if the version is not found (404) or rejection fails
+       */
       reject: () => Promise<ContentRejectResponse>
+
+      /**
+       * Publishes a version (makes it live).
+       *
+       * @returns Promise resolving to the published version
+       * @throws Error if the version is not found (404) or publishing fails
+       */
       publish: () => Promise<ContentPublishResponse>
+
+      /**
+       * Moves a published version back to draft.
+       *
+       * @returns Promise resolving to the version in draft state
+       * @throws Error if the version is not found (404) or transition fails
+       */
       draft: () => Promise<ContentDraftResponse>
     }
   }
   (params: ContentLocaleParam): {
+    /**
+     * Lists all versions for a specific locale of this content item.
+     *
+     * @returns Promise resolving to the locale versions
+     * @throws Error if the content or locale is not found (404) or request fails
+     *
+     * @example
+     * const versions = await content({ key: "article-123", locale: "en" }).list()
+     */
     list: () => Promise<ContentLocaleVersionsResponse>
+
+    /**
+     * Deletes a locale branch of this content item.
+     *
+     * Removes all versions for the specified locale.
+     *
+     * @returns Promise resolving to deletion confirmation or void
+     * @throws Error if the locale is not found (404) or deletion fails
+     */
     delete: () => Promise<ContentDeleteLocaleResponse | void>
   }
   (params: ContentKeyParam): {
+    /**
+     * Retrieves a specific content node by key.
+     *
+     * Gets the content node metadata and current version state.
+     *
+     * @returns Promise resolving to the content node
+     * @throws Error if the content is not found (404) or request fails
+     *
+     * @example
+     * const node = await content({ key: "article-123" }).get()
+     */
     get: () => Promise<ContentNodeResponse>
+
+    /**
+     * Partially updates a content node using JSON Merge Patch.
+     *
+     * Only provided fields are updated; omitted fields are unchanged.
+     *
+     * @param body - Fields to update
+     * @returns Promise resolving to the updated content node
+     * @throws Error if the content is not found (404) or validation fails
+     */
     patch: (body: ContentPatchNodeRequest) => Promise<ContentPatchResponse>
+
+    /**
+     * Deletes a content item.
+     *
+     * This operation cannot be undone (unless cms-permanent-delete is false).
+     *
+     * @returns Promise resolving to deletion confirmation or void
+     * @throws Error if the content is not found (404) or deletion fails
+     */
     delete: () => Promise<ContentDeleteResponse | void>
+
+    /**
+     * Creates a copy of the content item.
+     *
+     * @param options - Optional copy instructions
+     * @returns Promise resolving to the new copied content node
+     * @throws Error if the content is not found (404) or copy fails
+     */
     copy: (options?: ContentCopyRequest) => Promise<ContentCopyResponse>
+
+    /**
+     * Restores a deleted content item.
+     *
+     * Only works for soft-deleted content.
+     *
+     * @returns Promise resolving to the restored content node
+     * @throws Error if the content is not found or not deleted (404)
+     */
     undelete: () => Promise<ContentUndeleteResponse>
+
+    /**
+     * Gets the hierarchical path of the content item.
+     *
+     * @returns Promise resolving to the content path
+     * @throws Error if the content is not found (404) or request fails
+     */
     path: () => Promise<ContentPathResponse>
+
+    /**
+     * Lists assets belonging to this content item.
+     *
+     * @returns Promise resolving to the list of assets
+     * @throws Error if the content is not found (404) or request fails
+     */
     assets: () => Promise<ContentAssetsResponse>
+
+    /**
+     * Lists content items in this container.
+     *
+     * Only works if this content is a container type.
+     *
+     * @returns Promise resolving to the list of contained items
+     * @throws Error if the content is not found (404) or is not a container
+     */
     items: () => Promise<ContentItemsResponse>
+
+    /**
+     * Lists all versions of this content item.
+     *
+     * @returns Promise resolving to the list of versions
+     * @throws Error if the content is not found (404) or request fails
+     *
+     * @example
+     * const versions = await content({ key: "article-123" }).versions()
+     */
     versions: () => Promise<ContentVersionsResponse>
+
+    /**
+     * Creates a new version of this content item.
+     *
+     * @param body - Version creation data
+     * @returns Promise resolving to the created version
+     * @throws Error if the content is not found (404) or creation fails
+     *
+     * @example
+     * const version = await content({ key: "article-123" }).createVersion({
+     *   data: { title: "Updated Title" }
+     * })
+     */
     createVersion: (body: any) => Promise<ContentCreateVersionResponse>
   }
 }
 
 export function createContent(client: TypedSdkClient): ContentApi {
   function content(): {
-  /**
-   * Creates a new content item.
-   * 
-   * @param body - Content item data to create
-   * @param body.key - Unique identifier for the content (optional; auto-generated if not provided)
-   * @param body.contentType - ContentType key for this item (required)
-   * @param body.container - Optional container key for hierarchical content
-   * @param body.owner - Optional owner key for asset relationships
-   * @param body.initialVersion - Optional initial version payload (e.g. localized field data) for the new content
-   * @returns Promise resolving to the created content node
-   * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
-   * 
-   * @example
-   * const newContent = await content().post({
-   *   contentType: "article",
-   *   initialVersion: { data: { title: "My Article" } }
-   * })
-   */
   post: (body: ContentCreateRequest) => Promise<ContentCreateResponse>
 
-  /**
-   * Lists all content versions across all content items with optional filtering.
-   * 
-   * @param params - Query parameters for filtering and pagination
-   * @param params.locales - Optional list of locales to include (e.g., ['en', 'sv', 'NEUTRAL'])
-   * @param params.statuses - Optional list of version statuses to include (e.g., ['draft', 'published'])
-   * @param params.pageIndex - Zero-based page index for pagination
-   * @param params.pageSize - Maximum items per page
-   * @returns Promise resolving to a page of content versions
-   * @throws Error on 401 (Unauthorized), 403 (Forbidden), 429 (TooManyRequests), 500 (Server error)
-   * 
-   * @example
-   * const versions = await content().list({
-   *   locales: ['en'],
-   *   statuses: ['published'],
-   *   pageSize: 20
-   * })
-   */
   list: (params?: ContentListQueryParams) => Promise<ContentAllVersionsResponse>
 }
 
@@ -156,95 +347,25 @@ export function createContent(client: TypedSdkClient): ContentApi {
 // ============================================================================
 
   function content(params: ContentVersionParam): {
-  /**
-   * Retrieves a specific version of this content item.
-   * 
-   * @returns Promise resolving to the version data
-   * @throws Error if the version is not found (404) or request fails
-   * 
-   * @example
-   * const version = await content({ key: "article-123", version: "v1" }).get()
-   */
   get: () => Promise<ContentVersionResponse>
 
-  /**
-   * Partially updates a specific version.
-   * 
-   * @param body - Fields to update
-   * @returns Promise resolving to the updated version
-   * @throws Error if the version is not found (404) or update fails
-   */
   patch: (body: ContentPatchVersionRequest) => Promise<ContentPatchVersionResponse>
 
-  /**
-   * Deletes a specific version.
-   * 
-   * @returns Promise resolving to deletion confirmation or void
-   * @throws Error if the version is not found (404) or deletion fails
-   */
   delete: () => Promise<ContentDeleteVersionResponse | void>
 
-  /**
-   * Gets media associated with this version.
-   *
-   * The endpoint streams raw media (no JSON body), so the raw `Response` is returned —
-   * read it via `.blob()`, `.arrayBuffer()`, `.body`, or inspect `.headers`/`.url`.
-   *
-   * @returns Promise resolving to the raw fetch Response for the media
-   * @throws Error if media is not found (404) or request fails
-   */
   media: () => Promise<ContentMediaResponse>
 
-  /**
-   * Gets preview URLs for this version.
-   * 
-   * @returns Promise resolving to preview URLs for different applications
-   * @throws Error if previews are not available (404) or request fails
-   */
   previews: () => Promise<ContentPreviewsResponse>
 
-  /**
-   * Publishing workflow operations for this version.
-   */
   workflow: () => {
-    /**
-     * Moves version to ready state (ready for review/publishing).
-     * 
-     * @returns Promise resolving to the version in ready state
-     * @throws Error if the version is not found (404) or workflow fails
-     */
     ready: () => Promise<ContentReadyResponse>
 
-    /**
-     * Approves a version (moves to publishable state).
-     * 
-     * @returns Promise resolving to the approved version
-     * @throws Error if the version is not found (404) or approval fails
-     */
     approve: () => Promise<ContentApproveResponse>
 
-    /**
-     * Rejects a version (returns to draft).
-     * 
-     * @returns Promise resolving to the rejected version
-     * @throws Error if the version is not found (404) or rejection fails
-     */
     reject: () => Promise<ContentRejectResponse>
 
-    /**
-     * Publishes a version (makes it live).
-     * 
-     * @returns Promise resolving to the published version
-     * @throws Error if the version is not found (404) or publishing fails
-     */
     publish: () => Promise<ContentPublishResponse>
 
-    /**
-     * Moves a published version back to draft.
-     * 
-     * @returns Promise resolving to the version in draft state
-     * @throws Error if the version is not found (404) or transition fails
-     */
     draft: () => Promise<ContentDraftResponse>
   }
 }
@@ -254,25 +375,8 @@ export function createContent(client: TypedSdkClient): ContentApi {
 // ============================================================================
 
   function content(params: ContentLocaleParam): {
-  /**
-   * Lists all versions for a specific locale of this content item.
-   * 
-   * @returns Promise resolving to the locale versions
-   * @throws Error if the content or locale is not found (404) or request fails
-   * 
-   * @example
-   * const versions = await content({ key: "article-123", locale: "en" }).list()
-   */
   list: () => Promise<ContentLocaleVersionsResponse>
 
-  /**
-   * Deletes a locale branch of this content item.
-   * 
-   * Removes all versions for the specified locale.
-   * 
-   * @returns Promise resolving to deletion confirmation or void
-   * @throws Error if the locale is not found (404) or deletion fails
-   */
   delete: () => Promise<ContentDeleteLocaleResponse | void>
 }
 
@@ -281,108 +385,24 @@ export function createContent(client: TypedSdkClient): ContentApi {
 // ============================================================================
 
   function content(params: ContentKeyParam): {
-  /**
-   * Retrieves a specific content node by key.
-   * 
-   * Gets the content node metadata and current version state.
-   * 
-   * @returns Promise resolving to the content node
-   * @throws Error if the content is not found (404) or request fails
-   * 
-   * @example
-   * const node = await content({ key: "article-123" }).get()
-   */
   get: () => Promise<ContentNodeResponse>
 
-  /**
-   * Partially updates a content node using JSON Merge Patch.
-   * 
-   * Only provided fields are updated; omitted fields are unchanged.
-   * 
-   * @param body - Fields to update
-   * @returns Promise resolving to the updated content node
-   * @throws Error if the content is not found (404) or validation fails
-   */
   patch: (body: ContentPatchNodeRequest) => Promise<ContentPatchResponse>
 
-  /**
-   * Deletes a content item.
-   * 
-   * This operation cannot be undone (unless cms-permanent-delete is false).
-   * 
-   * @returns Promise resolving to deletion confirmation or void
-   * @throws Error if the content is not found (404) or deletion fails
-   */
   delete: () => Promise<ContentDeleteResponse | void>
 
-  /**
-   * Creates a copy of the content item.
-   * 
-   * @param options - Optional copy instructions
-   * @returns Promise resolving to the new copied content node
-   * @throws Error if the content is not found (404) or copy fails
-   */
   copy: (options?: ContentCopyRequest) => Promise<ContentCopyResponse>
 
-  /**
-   * Restores a deleted content item.
-   * 
-   * Only works for soft-deleted content.
-   * 
-   * @returns Promise resolving to the restored content node
-   * @throws Error if the content is not found or not deleted (404)
-   */
   undelete: () => Promise<ContentUndeleteResponse>
 
-  /**
-   * Gets the hierarchical path of the content item.
-   * 
-   * @returns Promise resolving to the content path
-   * @throws Error if the content is not found (404) or request fails
-   */
   path: () => Promise<ContentPathResponse>
 
-  /**
-   * Lists assets belonging to this content item.
-   * 
-   * @returns Promise resolving to the list of assets
-   * @throws Error if the content is not found (404) or request fails
-   */
   assets: () => Promise<ContentAssetsResponse>
 
-  /**
-   * Lists content items in this container.
-   * 
-   * Only works if this content is a container type.
-   * 
-   * @returns Promise resolving to the list of contained items
-   * @throws Error if the content is not found (404) or is not a container
-   */
   items: () => Promise<ContentItemsResponse>
 
-  /**
-   * Lists all versions of this content item.
-   * 
-   * @returns Promise resolving to the list of versions
-   * @throws Error if the content is not found (404) or request fails
-   * 
-   * @example
-   * const versions = await content({ key: "article-123" }).versions()
-   */
   versions: () => Promise<ContentVersionsResponse>
 
-  /**
-   * Creates a new version of this content item.
-   * 
-   * @param body - Version creation data
-   * @returns Promise resolving to the created version
-   * @throws Error if the content is not found (404) or creation fails
-   * 
-   * @example
-   * const version = await content({ key: "article-123" }).createVersion({
-   *   data: { title: "Updated Title" }
-   * })
-   */
   createVersion: (body: any) => Promise<ContentCreateVersionResponse>
 }
 
@@ -624,3 +644,5 @@ export function createContent(client: TypedSdkClient): ContentApi {
 
   return content
 }
+
+export type iContent = ContentApi

@@ -14,17 +14,6 @@ export type PropertyFormatGetQueryParam = {
 
 export interface PropertyFormatsApi {
   (): {
-    list: (query?: PropertyFormatQueryParam) => Promise<PropertyFormatListResponse>
-  }
-  (key: PropertyFormatKeyParam): {
-    get: (query?: PropertyFormatGetQueryParam) => Promise<PropertyFormatGetResponse>
-  }
-}
-
-// Property formats are a read-only, built-in resource: only list and get are supported.
-export function createPropertyFormats(client: TypedSdkClient): PropertyFormatsApi {
-  // Collection-level operations
-  function propertyformats(): {
     /**
      * List property formats.
      *
@@ -34,9 +23,7 @@ export function createPropertyFormats(client: TypedSdkClient): PropertyFormatsAp
      */
     list: (query?: PropertyFormatQueryParam) => Promise<PropertyFormatListResponse>
   }
-
-  // Item-level operations
-  function propertyformats(key: PropertyFormatKeyParam): {
+  (key: PropertyFormatKeyParam): {
     /**
      * Retrieves a specific property format by key.
      *
@@ -44,6 +31,19 @@ export function createPropertyFormats(client: TypedSdkClient): PropertyFormatsAp
      * @returns Promise resolving to the property format data (no body on 304 Not Modified)
      * @throws Error if not found (404) or request fails
      */
+    get: (query?: PropertyFormatGetQueryParam) => Promise<PropertyFormatGetResponse>
+  }
+}
+
+// Property formats are a read-only, built-in resource: only list and get are supported.
+export function createPropertyFormats(client: TypedSdkClient): PropertyFormatsApi {
+  // Collection-level operations
+  function propertyformats(): {
+    list: (query?: PropertyFormatQueryParam) => Promise<PropertyFormatListResponse>
+  }
+
+  // Item-level operations
+  function propertyformats(key: PropertyFormatKeyParam): {
     get: (query?: PropertyFormatGetQueryParam) => Promise<PropertyFormatGetResponse>
   }
 
@@ -76,3 +76,5 @@ export function createPropertyFormats(client: TypedSdkClient): PropertyFormatsAp
 
   return propertyformats
 }
+
+export type iPropertyFormats = PropertyFormatsApi

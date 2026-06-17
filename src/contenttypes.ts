@@ -33,12 +33,81 @@ type ContentTypeCreateRequest = Omit<RawContentTypeCreate, "baseType"> & {
 
 export interface ContentTypesApi {
   (): {
+    /**
+     * List content types.
+     *
+     * Retrieves a paginated list of all available content types. Results can be filtered by container type or source.
+     *
+     * @param query - Optional query parameters for pagination and filtering
+     * @param query.forContainerType - Only include types that are available for creation under the provided container type
+     * @param query.sources - Include content types from specified sources ('DEFAULT' for content types without a specific source)
+     * @param query.pageIndex - Zero-based page index
+     * @param query.pageSize - Number of results per page
+     * @returns Promise resolving to paginated content type list
+     * @throws Error on 401 (Unauthorized), 403 (Forbidden), 429 (TooManyRequests), 500 (Server error), or other failures
+     *
+     * @example
+     * const contentTypes = await contenttypes().list()
+     * const page2 = await contenttypes().list({ pageIndex: 1, pageSize: 50 })
+     * const filtered = await contenttypes().list({ forContainerType: "folder" })
+     */
     list: (query?: ContentTypeQueryParam) => Promise<ContentTypeListResponse>
+    /**
+     * Creates a new content type.
+     *
+     * @param body - Content type data to create
+     * @param body.displayName - Human-readable display name (required)
+     * @param body.baseType - Base type reference (e.g., 'component', 'block', etc.) - required for non-contract types
+     * @param body.isContract - Specifies if this is a contract type
+     * @returns Promise resolving to the created content type with assigned key
+     * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
+     *
+     * @example
+     * const newContentType = await contenttypes().post({
+     *   displayName: "My Component",
+     *   baseType: "component"
+     * })
+     */
     post: (body: ContentTypeCreateRequest) => Promise<ContentTypeCreateResponse>
   }
   (key: ContentTypeKeyParam): {
+    /**
+     * Retrieves a specific content type by key.
+     *
+     * @returns Promise resolving to the content type data
+     * @throws Error if the content type is not found (404) or request fails
+     *
+     * @example
+     * const contentType = await contenttypes({ key: "article" }).get()
+     */
     get: () => Promise<ContentTypeGetResponse>
+    /**
+     * Partially updates a content type using JSON Merge Patch.
+     *
+     * Only provided fields are updated; omitted fields are unchanged.
+     * Patching may result in data loss warnings that can be ignored with cms-ignore-data-loss-warnings header.
+     *
+     * @param body - Fields to update (all fields optional)
+     * @returns Promise resolving to the updated content type
+     * @throws Error if the content type is not found (404), precondition fails (412), or validation fails
+     *
+     * @example
+     * const updated = await contenttypes({ key: "article" }).patch({
+     *   displayName: "Updated Article"
+     * })
+     */
     patch: (body: ContentTypePatchRequest) => Promise<ContentTypePatchResponse>
+    /**
+     * Deletes a content type.
+     *
+     * This operation cannot be undone.
+     *
+     * @returns Promise resolving to deletion confirmation or void
+     * @throws Error if the content type is not found (404) or deletion fails
+     *
+     * @example
+     * await contenttypes({ key: "article" }).delete()
+     */
     delete: () => Promise<ContentTypeDeleteResponse | void>
   }
 }
@@ -46,86 +115,17 @@ export interface ContentTypesApi {
 export function createContentTypes(client: TypedSdkClient): ContentTypesApi {
   // Collection-level operations
   function contenttypes(): {
-  /**
-   * List content types.
-   * 
-   * Retrieves a paginated list of all available content types. Results can be filtered by container type or source.
-   * 
-   * @param query - Optional query parameters for pagination and filtering
-   * @param query.forContainerType - Only include types that are available for creation under the provided container type
-   * @param query.sources - Include content types from specified sources ('DEFAULT' for content types without a specific source)
-   * @param query.pageIndex - Zero-based page index
-   * @param query.pageSize - Number of results per page
-   * @returns Promise resolving to paginated content type list
-   * @throws Error on 401 (Unauthorized), 403 (Forbidden), 429 (TooManyRequests), 500 (Server error), or other failures
-   *
-   * @example
-   * const contentTypes = await contenttypes().list()
-   * const page2 = await contenttypes().list({ pageIndex: 1, pageSize: 50 })
-   * const filtered = await contenttypes().list({ forContainerType: "folder" })
-   */
   list: (query?: ContentTypeQueryParam) => Promise<ContentTypeListResponse>
-  
-  /**
-   * Creates a new content type.
-   * 
-   * @param body - Content type data to create
-   * @param body.displayName - Human-readable display name (required)
-   * @param body.baseType - Base type reference (e.g., 'component', 'block', etc.) - required for non-contract types
-   * @param body.isContract - Specifies if this is a contract type
-   * @returns Promise resolving to the created content type with assigned key
-   * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
-   * 
-   * @example
-   * const newContentType = await contenttypes().post({
-   *   displayName: "My Component",
-   *   baseType: "component"
-   * })
-   */
+
   post: (body: ContentTypeCreateRequest) => Promise<ContentTypeCreateResponse>
 }
 
   // Item-level operations
   function contenttypes(key: ContentTypeKeyParam): {
-  /**
-   * Retrieves a specific content type by key.
-   * 
-   * @returns Promise resolving to the content type data
-   * @throws Error if the content type is not found (404) or request fails
-   * 
-   * @example
-   * const contentType = await contenttypes({ key: "article" }).get()
-   */
   get: () => Promise<ContentTypeGetResponse>
-  
-  /**
-   * Partially updates a content type using JSON Merge Patch.
-   * 
-   * Only provided fields are updated; omitted fields are unchanged.
-   * Patching may result in data loss warnings that can be ignored with cms-ignore-data-loss-warnings header.
-   * 
-   * @param body - Fields to update (all fields optional)
-   * @returns Promise resolving to the updated content type
-   * @throws Error if the content type is not found (404), precondition fails (412), or validation fails
-   * 
-   * @example
-   * const updated = await contenttypes({ key: "article" }).patch({
-   *   displayName: "Updated Article"
-   * })
-   */
+
   patch: (body: ContentTypePatchRequest) => Promise<ContentTypePatchResponse>
-  
-  /**
-   * Deletes a content type.
-   * 
-   * This operation cannot be undone.
-   * 
-   * @returns Promise resolving to deletion confirmation or void
-   * @throws Error if the content type is not found (404) or deletion fails
-   * 
-   * @example
-   * await contenttypes({ key: "article" }).delete()
-   */
+
   delete: () => Promise<ContentTypeDeleteResponse | void>
 }
 
@@ -182,3 +182,5 @@ export function createContentTypes(client: TypedSdkClient): ContentTypesApi {
 
   return contenttypes
 }
+
+export type iContentTypes = ContentTypesApi

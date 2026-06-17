@@ -24,19 +24,6 @@ export type PropertyGroupQueryParam = {
 
 export interface PropertyGroupsApi {
   (): {
-    list: (query?: PropertyGroupQueryParam) => Promise<PropertyGroupListResponse>
-    post: (body: PropertyGroupCreateRequest) => Promise<PropertyGroupCreateResponse>
-  }
-  (key: PropertyGroupKeyParam): {
-    get: () => Promise<PropertyGroupGetResponse>
-    patch: (body: PropertyGroupPatchRequest) => Promise<PropertyGroupPatchResponse>
-    delete: () => Promise<PropertyGroupDeleteResponse | void>
-  }
-}
-
-export function createPropertyGroups(client: TypedSdkClient): PropertyGroupsApi {
-  // Collection-level operations
-  function propertygroups(): {
     /**
      * List property groups.
      *
@@ -55,9 +42,7 @@ export function createPropertyGroups(client: TypedSdkClient): PropertyGroupsApi 
      */
     post: (body: PropertyGroupCreateRequest) => Promise<PropertyGroupCreateResponse>
   }
-
-  // Item-level operations
-  function propertygroups(key: PropertyGroupKeyParam): {
+  (key: PropertyGroupKeyParam): {
     /**
      * Retrieves a specific property group by key.
      *
@@ -81,6 +66,24 @@ export function createPropertyGroups(client: TypedSdkClient): PropertyGroupsApi 
      * @returns Promise resolving to deletion confirmation or void
      * @throws Error if not found (404) or deletion fails
      */
+    delete: () => Promise<PropertyGroupDeleteResponse | void>
+  }
+}
+
+export function createPropertyGroups(client: TypedSdkClient): PropertyGroupsApi {
+  // Collection-level operations
+  function propertygroups(): {
+    list: (query?: PropertyGroupQueryParam) => Promise<PropertyGroupListResponse>
+
+    post: (body: PropertyGroupCreateRequest) => Promise<PropertyGroupCreateResponse>
+  }
+
+  // Item-level operations
+  function propertygroups(key: PropertyGroupKeyParam): {
+    get: () => Promise<PropertyGroupGetResponse>
+
+    patch: (body: PropertyGroupPatchRequest) => Promise<PropertyGroupPatchResponse>
+
     delete: () => Promise<PropertyGroupDeleteResponse | void>
   }
 
@@ -137,3 +140,5 @@ export function createPropertyGroups(client: TypedSdkClient): PropertyGroupsApi 
 
   return propertygroups
 }
+
+export type iPropertyGroups = PropertyGroupsApi

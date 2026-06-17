@@ -18,19 +18,6 @@ export type LocaleQueryParam = { pageIndex?: number; pageSize?: number }
 
 export interface LocalesApi {
   (): {
-    list: (query?: LocaleQueryParam) => Promise<LocaleListResponse>
-    post: (body: LocaleCreateRequest) => Promise<LocaleCreateResponse>
-  }
-  (key: LocaleKeyParam): {
-    get: () => Promise<LocaleGetResponse>
-    patch: (body: LocalePatchRequest) => Promise<LocalePatchResponse>
-    delete: () => Promise<LocaleDeleteResponse | void>
-  }
-}
-
-export function createLocales(client: TypedSdkClient): LocalesApi {
-  // Collection-level operations
-  function locales(): {
     /**
      * List locales.
      *
@@ -49,9 +36,7 @@ export function createLocales(client: TypedSdkClient): LocalesApi {
      */
     post: (body: LocaleCreateRequest) => Promise<LocaleCreateResponse>
   }
-
-  // Item-level operations
-  function locales(key: LocaleKeyParam): {
+  (key: LocaleKeyParam): {
     /**
      * Retrieves a specific locale by key.
      *
@@ -75,6 +60,24 @@ export function createLocales(client: TypedSdkClient): LocalesApi {
      * @returns Promise resolving to deletion confirmation or void
      * @throws Error if not found (404) or deletion fails
      */
+    delete: () => Promise<LocaleDeleteResponse | void>
+  }
+}
+
+export function createLocales(client: TypedSdkClient): LocalesApi {
+  // Collection-level operations
+  function locales(): {
+    list: (query?: LocaleQueryParam) => Promise<LocaleListResponse>
+
+    post: (body: LocaleCreateRequest) => Promise<LocaleCreateResponse>
+  }
+
+  // Item-level operations
+  function locales(key: LocaleKeyParam): {
+    get: () => Promise<LocaleGetResponse>
+
+    patch: (body: LocalePatchRequest) => Promise<LocalePatchResponse>
+
     delete: () => Promise<LocaleDeleteResponse | void>
   }
 
@@ -131,3 +134,5 @@ export function createLocales(client: TypedSdkClient): LocalesApi {
 
   return locales
 }
+
+export type iLocales = LocalesApi

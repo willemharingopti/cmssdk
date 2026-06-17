@@ -1,7 +1,8 @@
 {
    "tasks": {
       "generate": "deno -A src/openapi/generate.ts --path=./generated/openapispec.ts",
-      "example": "deno -A example.ts"
+      "example": "deno -A example.ts",
+      "doc": "deno doc --html --reload  src/mod.ts"
    },
    "imports": {
       "@std/cli": "jsr:@std/cli@^1.0.30",
@@ -20,6 +21,6 @@
    "name": "@willemharingopti/cmssdk",
    
    "version": "0.0.9",
-   "exports": "./src/sdk.ts",
+   "exports": "./src/mod.ts",
    "license": "MIT"
 }

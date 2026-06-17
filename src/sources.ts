@@ -18,19 +18,6 @@ export type ContentSourceQueryParam = { pageIndex?: number; pageSize?: number }
 
 export interface SourcesApi {
   (): {
-    list: (query?: ContentSourceQueryParam) => Promise<ContentSourceListResponse>
-    post: (body: ContentSourceCreateRequest) => Promise<ContentSourceCreateResponse>
-  }
-  (key: ContentSourceKeyParam): {
-    get: () => Promise<ContentSourceGetResponse>
-    patch: (body: ContentSourcePatchRequest) => Promise<ContentSourcePatchResponse>
-    delete: () => Promise<ContentSourceDeleteResponse | void>
-  }
-}
-
-export function createSources(client: TypedSdkClient): SourcesApi {
-  // Collection-level operations
-  function sources(): {
     /**
      * List content sources.
      *
@@ -49,9 +36,7 @@ export function createSources(client: TypedSdkClient): SourcesApi {
      */
     post: (body: ContentSourceCreateRequest) => Promise<ContentSourceCreateResponse>
   }
-
-  // Item-level operations
-  function sources(key: ContentSourceKeyParam): {
+  (key: ContentSourceKeyParam): {
     /**
      * Retrieves a specific content source by key.
      *
@@ -75,6 +60,24 @@ export function createSources(client: TypedSdkClient): SourcesApi {
      * @returns Promise resolving to deletion confirmation or void
      * @throws Error if not found (404) or deletion fails
      */
+    delete: () => Promise<ContentSourceDeleteResponse | void>
+  }
+}
+
+export function createSources(client: TypedSdkClient): SourcesApi {
+  // Collection-level operations
+  function sources(): {
+    list: (query?: ContentSourceQueryParam) => Promise<ContentSourceListResponse>
+
+    post: (body: ContentSourceCreateRequest) => Promise<ContentSourceCreateResponse>
+  }
+
+  // Item-level operations
+  function sources(key: ContentSourceKeyParam): {
+    get: () => Promise<ContentSourceGetResponse>
+
+    patch: (body: ContentSourcePatchRequest) => Promise<ContentSourcePatchResponse>
+
     delete: () => Promise<ContentSourceDeleteResponse | void>
   }
 
@@ -131,3 +134,5 @@ export function createSources(client: TypedSdkClient): SourcesApi {
 
   return sources
 }
+
+export type iSources = SourcesApi

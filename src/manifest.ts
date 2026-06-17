@@ -13,14 +13,6 @@ type ManifestImportResponse = ManifestImportResult | void
 
 export interface ManifestApi {
   (): {
-    export: (query?: ManifestExportQuery) => Promise<ManifestExportResponse>
-    import: (body: ManifestImportRequest) => Promise<ManifestImportResponse>
-  }
-}
-
-// The manifest is a singleton resource (no key): it can be exported and imported.
-export function createManifest(client: TypedSdkClient): ManifestApi {
-  return () => ({
     /**
      * Exports the manifest.
      *
@@ -31,13 +23,7 @@ export function createManifest(client: TypedSdkClient): ManifestApi {
      * @example
      * const manifest = await client.manifest().export({ sections: ["contentTypes", "locales"] })
      */
-    export: async (query?: ManifestExportQuery): Promise<ManifestExportResponse> => {
-      const res = await client.GET("/manifest", { params: { query } })
-      const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
-      return res.data as ManifestExportResponse
-    },
-
+    export: (query?: ManifestExportQuery) => Promise<ManifestExportResponse>
     /**
      * Imports a manifest.
      *
@@ -49,6 +35,20 @@ export function createManifest(client: TypedSdkClient): ManifestApi {
      * @example
      * const result = await client.manifest().import(manifest)
      */
+    import: (body: ManifestImportRequest) => Promise<ManifestImportResponse>
+  }
+}
+
+// The manifest is a singleton resource (no key): it can be exported and imported.
+export function createManifest(client: TypedSdkClient): ManifestApi {
+  return () => ({
+    export: async (query?: ManifestExportQuery): Promise<ManifestExportResponse> => {
+      const res = await client.GET("/manifest", { params: { query } })
+      const errorMessage = handleerror(res)
+      if (errorMessage) throw new Error(errorMessage)
+      return res.data as ManifestExportResponse
+    },
+
     import: async (body: ManifestImportRequest): Promise<ManifestImportResponse> => {
       const res = await client.POST("/manifest", { body })
       const errorMessage = handleerror(res)
@@ -57,3 +57,5 @@ export function createManifest(client: TypedSdkClient): ManifestApi {
     },
   })
 }
+
+export type iManifest = ManifestApi

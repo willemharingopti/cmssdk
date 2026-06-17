@@ -27,12 +27,74 @@ type BlueprintCreateRequest = Omit<RawBlueprintCreate, "contentType"> & {
 
 export interface BlueprintsApi {
   (): {
+    /**
+     * List blueprints.
+     *
+     * Retrieves a paginated list of all available blueprints. Results are sorted by creation date.
+     *
+     * @param query - Optional query parameters for pagination
+     * @param query.pageIndex - Zero-based page index
+     * @param query.pageSize - Number of results per page
+     * @returns Promise resolving to paginated blueprint list
+     * @throws Error on 401 (Unauthorized), 403 (Forbidden), 429 (TooManyRequests), 500 (Server error), or other failures
+     *
+     * @example
+     * const blueprints = await blueprints().list()
+     * const page2 = await blueprints().list({ pageIndex: 1, pageSize: 50 })
+     */
     list: (query?: BlueprintQueryParam) => Promise<BlueprintListResponse>
+    /**
+     * Creates a new blueprint.
+     *
+     * @param body - Blueprint data to create
+     * @returns Promise resolving to the created blueprint with assigned key
+     * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
+     *
+     * @example
+     * const newBlueprint = await blueprints().post({
+     *   name: "My Blueprint",
+     *   description: "A test blueprint"
+     * })
+     */
     post: (body: BlueprintCreateRequest) => Promise<BlueprintCreateResponse>
   }
   (key: BlueprintKeyParam): {
+    /**
+     * Retrieves a specific blueprint by key.
+     *
+     * @returns Promise resolving to the blueprint data
+     * @throws Error if the blueprint is not found (404) or request fails
+     *
+     * @example
+     * const blueprint = await blueprints({ key: "abc-123" }).get()
+     */
     get: () => Promise<BlueprintGetResponse>
+    /**
+     * Partially updates a blueprint using JSON Merge Patch.
+     *
+     * Only provided fields are updated; omitted fields are unchanged.
+     *
+     * @param body - Fields to update (all fields optional)
+     * @returns Promise resolving to the updated blueprint
+     * @throws Error if the blueprint is not found (404), precondition fails (412), or validation fails
+     *
+     * @example
+     * const updated = await blueprints({ key: "abc-123" }).patch({
+     *   name: "Updated Blueprint"
+     * })
+     */
     patch: (body: BlueprintPatchRequest) => Promise<BlueprintPatchResponse>
+    /**
+     * Deletes a blueprint.
+     *
+     * This operation cannot be undone.
+     *
+     * @returns Promise resolving to deletion confirmation or void
+     * @throws Error if the blueprint is not found (404) or deletion fails
+     *
+     * @example
+     * await blueprints({ key: "abc-123" }).delete()
+     */
     delete: () => Promise<BlueprintDeleteResponse | void>
   }
 }
@@ -40,79 +102,17 @@ export interface BlueprintsApi {
 export function createBlueprints(client: TypedSdkClient): BlueprintsApi {
   // Collection-level operations
   function blueprints(): {
-  /**
-   * List blueprints.
-   * 
-   * Retrieves a paginated list of all available blueprints. Results are sorted by creation date.
-   * 
-   * @param query - Optional query parameters for pagination
-   * @param query.pageIndex - Zero-based page index
-   * @param query.pageSize - Number of results per page
-   * @returns Promise resolving to paginated blueprint list
-   * @throws Error on 401 (Unauthorized), 403 (Forbidden), 429 (TooManyRequests), 500 (Server error), or other failures
-   *
-   * @example
-   * const blueprints = await blueprints().list()
-   * const page2 = await blueprints().list({ pageIndex: 1, pageSize: 50 })
-   */
   list: (query?: BlueprintQueryParam) => Promise<BlueprintListResponse>
-  
-  /**
-   * Creates a new blueprint.
-   * 
-   * @param body - Blueprint data to create
-   * @returns Promise resolving to the created blueprint with assigned key
-   * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
-   * 
-   * @example
-   * const newBlueprint = await blueprints().post({
-   *   name: "My Blueprint",
-   *   description: "A test blueprint"
-   * })
-   */
+
   post: (body: BlueprintCreateRequest) => Promise<BlueprintCreateResponse>
 }
 
   // Item-level operations
   function blueprints(key: BlueprintKeyParam): {
-  /**
-   * Retrieves a specific blueprint by key.
-   * 
-   * @returns Promise resolving to the blueprint data
-   * @throws Error if the blueprint is not found (404) or request fails
-   * 
-   * @example
-   * const blueprint = await blueprints({ key: "abc-123" }).get()
-   */
   get: () => Promise<BlueprintGetResponse>
-  
-  /**
-   * Partially updates a blueprint using JSON Merge Patch.
-   * 
-   * Only provided fields are updated; omitted fields are unchanged.
-   * 
-   * @param body - Fields to update (all fields optional)
-   * @returns Promise resolving to the updated blueprint
-   * @throws Error if the blueprint is not found (404), precondition fails (412), or validation fails
-   * 
-   * @example
-   * const updated = await blueprints({ key: "abc-123" }).patch({
-   *   name: "Updated Blueprint"
-   * })
-   */
+
   patch: (body: BlueprintPatchRequest) => Promise<BlueprintPatchResponse>
-  
-  /**
-   * Deletes a blueprint.
-   * 
-   * This operation cannot be undone.
-   * 
-   * @returns Promise resolving to deletion confirmation or void
-   * @throws Error if the blueprint is not found (404) or deletion fails
-   * 
-   * @example
-   * await blueprints({ key: "abc-123" }).delete()
-   */
+
   delete: () => Promise<BlueprintDeleteResponse | void>
 }
 
@@ -169,3 +169,5 @@ export function createBlueprints(client: TypedSdkClient): BlueprintsApi {
 
   return blueprints
 }
+
+export type iBlueprints = BlueprintsApi

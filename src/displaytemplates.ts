@@ -18,19 +18,6 @@ export type DisplayTemplateQueryParam = { pageIndex?: number; pageSize?: number 
 
 export interface DisplayTemplatesApi {
   (): {
-    list: (query?: DisplayTemplateQueryParam) => Promise<DisplayTemplateListResponse>
-    post: (body: DisplayTemplateCreateRequest) => Promise<DisplayTemplateCreateResponse>
-  }
-  (key: DisplayTemplateKeyParam): {
-    get: () => Promise<DisplayTemplateGetResponse>
-    patch: (body: DisplayTemplatePatchRequest) => Promise<DisplayTemplatePatchResponse>
-    delete: () => Promise<DisplayTemplateDeleteResponse | void>
-  }
-}
-
-export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplatesApi {
-  // Collection-level operations
-  function displaytemplates(): {
     /**
      * List display templates.
      *
@@ -49,9 +36,7 @@ export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplates
      */
     post: (body: DisplayTemplateCreateRequest) => Promise<DisplayTemplateCreateResponse>
   }
-
-  // Item-level operations
-  function displaytemplates(key: DisplayTemplateKeyParam): {
+  (key: DisplayTemplateKeyParam): {
     /**
      * Retrieves a specific display template by key.
      *
@@ -75,6 +60,24 @@ export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplates
      * @returns Promise resolving to deletion confirmation or void
      * @throws Error if not found (404) or deletion fails
      */
+    delete: () => Promise<DisplayTemplateDeleteResponse | void>
+  }
+}
+
+export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplatesApi {
+  // Collection-level operations
+  function displaytemplates(): {
+    list: (query?: DisplayTemplateQueryParam) => Promise<DisplayTemplateListResponse>
+
+    post: (body: DisplayTemplateCreateRequest) => Promise<DisplayTemplateCreateResponse>
+  }
+
+  // Item-level operations
+  function displaytemplates(key: DisplayTemplateKeyParam): {
+    get: () => Promise<DisplayTemplateGetResponse>
+
+    patch: (body: DisplayTemplatePatchRequest) => Promise<DisplayTemplatePatchResponse>
+
     delete: () => Promise<DisplayTemplateDeleteResponse | void>
   }
 
@@ -131,3 +134,5 @@ export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplates
 
   return displaytemplates
 }
+
+export type iDisplayTemplates = DisplayTemplatesApi
