@@ -20,7 +20,7 @@
    },   
    "name": "@willemharingopti/cmssdk",
    
-   "version": "0.0.12",
+   "version": "0.0.13",
    "exports": "./src/mod.ts",
    "license": "MIT"
 }

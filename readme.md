@@ -2,8 +2,6 @@
 
 **cmssdk is an sdkwrapper arround the [Optimizely Content Management System (CMS) (SaaS) REST API](https://docs.developers.optimizely.com/content-management-system/v1.0.0-CMS-SaaS/reference/introduction-to-the-cms-content-api). This sdk is designed to create a fully typed sdk, so that working with entiries in Optimizely CMS becomes really easy and fully typed.**
 
-
-
 ## installing
 
 **deno**
