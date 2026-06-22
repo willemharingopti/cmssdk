@@ -105,7 +105,7 @@ export function createLocales(client: TypedSdkClient): LocalesApi {
     }
 
     const patchLocale = async (keyParam: LocaleKeyParam, body: LocalePatchRequest): Promise<LocalePatchResponse> => {
-      const res = await client.PATCH("/locales/{key}", { params: { path: keyParam }, body })
+      const res = await client.PATCH("/locales/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
       const errorMessage = handleerror(res)
       if (errorMessage) throw new Error(errorMessage)
       return res.data as LocalePatchResponse

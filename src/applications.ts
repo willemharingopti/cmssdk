@@ -124,7 +124,7 @@ export function createApplications(client: TypedSdkClient): ApplicationsApi {
     }
 
     const patchApplication = async (keyParam: ApplicationKeyParam, body: ApplicationPatchRequest): Promise<ApplicationPatchResponse> => {
-        const res = await client.PATCH(`/applications/{key}`, { params: { path: keyParam }, body })
+        const res = await client.PATCH(`/applications/{key}`, { params: { path: keyParam }, body, headers: {"content-type": "application/merge-patch+json"} })
         const errorMessage = handleerror(res)
         if (errorMessage) throw new Error(errorMessage)
         return res.data as ApplicationPatchResponse

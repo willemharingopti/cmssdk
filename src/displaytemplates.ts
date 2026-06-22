@@ -105,7 +105,7 @@ export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplates
     }
 
     const patchDisplayTemplate = async (keyParam: DisplayTemplateKeyParam, body: DisplayTemplatePatchRequest): Promise<DisplayTemplatePatchResponse> => {
-      const res = await client.PATCH("/displaytemplates/{key}", { params: { path: keyParam }, body })
+      const res = await client.PATCH("/displaytemplates/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
       const errorMessage = handleerror(res)
       if (errorMessage) throw new Error(errorMessage)
       return res.data as DisplayTemplatePatchResponse

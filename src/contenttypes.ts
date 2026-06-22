@@ -153,7 +153,7 @@ export function createContentTypes(client: TypedSdkClient): ContentTypesApi {
   }
 
   const patchContentType = async (keyParam: ContentTypeKeyParam, body: ContentTypePatchRequest): Promise<ContentTypePatchResponse> => {
-    const res = await client.PATCH("/contenttypes/{key}", { params: { path: keyParam }, body })
+    const res = await client.PATCH("/contenttypes/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
     const errorMessage = handleerror(res)
     if (errorMessage) throw new Error(errorMessage)
     return res.data as ContentTypePatchResponse

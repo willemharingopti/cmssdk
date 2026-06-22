@@ -140,7 +140,7 @@ export function createBlueprints(client: TypedSdkClient): BlueprintsApi {
   }
 
   const patchBlueprint = async (keyParam: BlueprintKeyParam, body: BlueprintPatchRequest): Promise<BlueprintPatchResponse> => {
-    const res = await client.PATCH("/blueprints/{key}", { params: { path: keyParam }, body })
+    const res = await client.PATCH("/blueprints/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
     const errorMessage = handleerror(res)
     if (errorMessage) throw new Error(errorMessage)
     return res.data as BlueprintPatchResponse

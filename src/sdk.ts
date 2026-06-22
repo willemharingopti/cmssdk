@@ -25,7 +25,7 @@ import type {
 export { keyFromEntryPoint } from "./utils.ts"
 export type { iOptions } from "./openapi/typedsdk.ts"
 
-dotenv.config()
+dotenv.config({quiet: true})
 
 /**
  * These are the main methods of the sdk

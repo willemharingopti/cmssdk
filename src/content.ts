@@ -46,6 +46,13 @@ type ContentAllVersionsResponse = paths["/content/versions"]["get"]["responses"]
 type RawContentCreate = paths["/content"]["post"]["requestBody"]["content"]["application/json"]
 type ContentCreateRequest = RawContentCreate
 
+// The multipart variant of the create endpoint: a JSON `content` part plus a binary `file`.
+// The generated spec types `file` as `string`; widen it to the runtime binary types callers actually pass.
+type ContentUploadRequest = {
+  content: RawContentCreate
+  file: Blob | File | Uint8Array | string
+}
+
 type ContentCopyRequest = NonNullable<paths["/content/{key}:copy"]["post"]["requestBody"]>["content"]["application/json"] | undefined
 type ContentPatchNodeRequest = paths["/content/{key}"]["patch"]["requestBody"]["content"]["application/merge-patch+json"]
 
@@ -92,6 +99,28 @@ export interface ContentApi {
      * })
      */
     post: (body: ContentCreateRequest) => Promise<ContentCreateResponse>
+
+    /**
+     * Creates a new content item together with its binary media in a single
+     * `multipart/form-data` request.
+     *
+     * Use this instead of `post` when the content item owns a media file (e.g. an
+     * image or document). The request is encoded as `multipart/form-data`; the
+     * `content-type` header (including the required boundary) is set automatically.
+     *
+     * @param body - Upload payload
+     * @param body.content - Content item metadata to create (same shape as `post`)
+     * @param body.file - The binary media file to upload (Blob/File/Uint8Array)
+     * @returns Promise resolving to the created content node
+     * @throws Error on 400 (Bad request), 401 (Unauthorized), 403 (Forbidden), 409 (Conflict), 429 (TooManyRequests), 500 (Server error)
+     *
+     * @example
+     * const newImage = await content().upload({
+     *   content: { contentType: "image" },
+     *   file: myFileBlob,
+     * })
+     */
+    upload: (body: ContentUploadRequest) => Promise<ContentCreateResponse>
 
     /**
      * Lists all content versions across all content items with optional filtering.
@@ -339,6 +368,8 @@ export function createContent(client: TypedSdkClient): ContentApi {
   function content(): {
   post: (body: ContentCreateRequest) => Promise<ContentCreateResponse>
 
+  upload: (body: ContentUploadRequest) => Promise<ContentCreateResponse>
+
   list: (params?: ContentListQueryParams) => Promise<ContentAllVersionsResponse>
 }
 
@@ -424,6 +455,24 @@ export function createContent(client: TypedSdkClient): ContentApi {
     return res.data as ContentCreateResponse
   }
 
+  const uploadContent = async (body: ContentUploadRequest): Promise<ContentCreateResponse> => {
+    // Send as multipart/form-data: a JSON `content` part plus the binary `file`.
+    // Returning a FormData from bodySerializer lets fetch set the content-type header
+    // with the required boundary (don't set it manually, or the boundary is lost).
+    const res = await client.POST("/content", {
+      body: body as any,
+      bodySerializer: () => {
+        const form = new FormData()
+        form.append("content", new Blob([JSON.stringify(body.content)], { type: "application/json" }))
+        form.append("file", body.file as Blob)
+        return form
+      },
+    })
+    const errorMessage = handleerror(res)
+    if (errorMessage) throw new Error(errorMessage)
+    return res.data as ContentCreateResponse
+  }
+
   // Item-level
   const getNode = async (keyParam: ContentKeyParam): Promise<ContentNodeResponse> => {
     const res = await client.GET("/content/{key}", { params: { path: keyParam } })
@@ -433,7 +482,7 @@ export function createContent(client: TypedSdkClient): ContentApi {
   }
 
   const patchNode = async (keyParam: ContentKeyParam, body: ContentPatchNodeRequest): Promise<ContentPatchResponse> => {
-    const res = await client.PATCH("/content/{key}", { params: { path: keyParam }, body })
+    const res = await client.PATCH("/content/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
     const errorMessage = handleerror(res)
     if (errorMessage) throw new Error(errorMessage)
     return res.data as ContentPatchResponse
@@ -503,7 +552,7 @@ export function createContent(client: TypedSdkClient): ContentApi {
   }
 
   const patchVersion = async (params: ContentVersionParam, body: ContentPatchVersionRequest): Promise<ContentPatchVersionResponse> => {
-    const res = await client.PATCH("/content/{key}/versions/{version}", { params: { path: params }, body })
+    const res = await client.PATCH("/content/{key}/versions/{version}", { params: { path: params }, headers: {"content-type": "application/merge-patch+json"}, body })
     const errorMessage = handleerror(res)
     if (errorMessage) throw new Error(errorMessage)
     return res.data as ContentPatchVersionResponse
@@ -595,6 +644,7 @@ export function createContent(client: TypedSdkClient): ContentApi {
   if (!params) {
     return {
       post: async (body: ContentCreateRequest) => await createContent(body),
+      upload: async (body: ContentUploadRequest) => await uploadContent(body),
       list: async (params?: ContentListQueryParams) => await listAllVersions(params),
     }
   }
