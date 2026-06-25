@@ -1,6 +1,12 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource. The child category
+// ["cmssdk", "entity", "content"] lets consumers filter content operations
+// specifically, while still inheriting the entity-level sink configuration.
+const log = entityLogger.getChild("content")
 
 // ============================================================================
 // Response Types
@@ -449,9 +455,14 @@ export function createContent(client: TypedSdkClient): ContentApi {
 
   // Collection-level
   const createContent = async (body: ContentCreateRequest): Promise<ContentCreateResponse> => {
+    log.info("Creating content of type {contentType}", { contentType: body.contentType, key: body.key })
     const res = await client.POST("/content", { body })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to create content: {error}", { error: errorMessage })
+      throw new Error(errorMessage)
+    }
+    log.info("Created content {key}", { key: (res.data as ContentCreateResponse)?.key })
     return res.data as ContentCreateResponse
   }
 
@@ -475,9 +486,13 @@ export function createContent(client: TypedSdkClient): ContentApi {
 
   // Item-level
   const getNode = async (keyParam: ContentKeyParam): Promise<ContentNodeResponse> => {
+    log.debug("Fetching content node {key}", { key: keyParam.key })
     const res = await client.GET("/content/{key}", { params: { path: keyParam } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to fetch content {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentNodeResponse
   }
 
@@ -489,9 +504,13 @@ export function createContent(client: TypedSdkClient): ContentApi {
   }
 
   const deleteContent = async (keyParam: ContentKeyParam): Promise<ContentDeleteResponse | void> => {
+    log.info("Deleting content {key}", { key: keyParam.key })
     const res = await client.DELETE("/content/{key}", { params: { path: keyParam } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to delete content {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentDeleteResponse | void
   }
 
@@ -595,9 +614,13 @@ export function createContent(client: TypedSdkClient): ContentApi {
   }
 
   const publish = async (params: ContentVersionParam): Promise<ContentPublishResponse> => {
+    log.info("Publishing content {key} version {version}", { key: params.key, version: params.version })
     const res = await client.POST("/content/{key}/versions/{version}:publish", { params: { path: params } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to publish content {key} version {version}: {error}", { key: params.key, version: params.version, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentPublishResponse
   }
 

@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("locales")
 
 type LocaleListResponse = paths["/locales"]["get"]["responses"][200]["content"]["application/json"]
 type LocaleGetResponse = paths["/locales/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -84,37 +88,58 @@ export function createLocales(client: TypedSdkClient): LocalesApi {
   // Implementation with optional parameter
   function locales(key?: LocaleKeyParam) {
     const listLocales = async (query?: LocaleQueryParam): Promise<LocaleListResponse> => {
+      log.debug("Listing locales", { query })
       const res = await client.GET("/locales", { params: { query } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to list locale: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as LocaleListResponse
     }
 
     const getLocale = async (keyParam: LocaleKeyParam): Promise<LocaleGetResponse> => {
+      log.debug("Fetching locale {key}", { key: keyParam.key })
       const res = await client.GET("/locales/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to fetch locale {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as LocaleGetResponse
     }
 
     const createLocale = async (body: LocaleCreateRequest): Promise<LocaleCreateResponse> => {
+      log.info("Creating locale")
       const res = await client.POST("/locales", { body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to create locale: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
+      log.info("Created locale {key}", { key: body.key })
       return res.data as LocaleCreateResponse
     }
 
     const patchLocale = async (keyParam: LocaleKeyParam, body: LocalePatchRequest): Promise<LocalePatchResponse> => {
+      log.info("Patching locale {key}", { key: keyParam.key })
       const res = await client.PATCH("/locales/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to patch locale {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as LocalePatchResponse
     }
 
     const deleteLocale = async (keyParam: LocaleKeyParam): Promise<LocaleDeleteResponse | void> => {
+      log.info("Deleting locale {key}", { key: keyParam.key })
       const res = await client.DELETE("/locales/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to delete locale {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as LocaleDeleteResponse | void
     }
 

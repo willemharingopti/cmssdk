@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("contenttypes")
 
 type ContentTypeListResponse = paths["/contenttypes"]["get"]["responses"][200]["content"]["application/json"]
 type ContentTypeGetResponse = paths["/contenttypes/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -132,37 +136,58 @@ export function createContentTypes(client: TypedSdkClient): ContentTypesApi {
   // Implementation with optional parameter
   function contenttypes(key?: ContentTypeKeyParam) {
   const listContentTypes = async (query?: ContentTypeQueryParam): Promise<ContentTypeListResponse> => {
+    log.debug("Listing content types", { query })
     const res = await client.GET("/contenttypes", { params: { query } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to list content type: {error}", { error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentTypeListResponse
   }
 
   const getContentType = async (keyParam: ContentTypeKeyParam): Promise<ContentTypeGetResponse> => {
+    log.debug("Fetching content type {key}", { key: keyParam.key })
     const res = await client.GET("/contenttypes/{key}", { params: { path: keyParam } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to fetch content type {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentTypeGetResponse
   }
 
   const createContentType = async (body: ContentTypeCreateRequest): Promise<ContentTypeCreateResponse> => {
+    log.info("Creating content type")
     const res = await client.POST("/contenttypes", { body: body as unknown as RawContentTypeCreate })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to create content type: {error}", { error: errorMessage })
+      throw new Error(errorMessage)
+    }
+    log.info("Created content type {key}", { key: (res.data as ContentTypeCreateResponse)?.key })
     return res.data as ContentTypeCreateResponse
   }
 
   const patchContentType = async (keyParam: ContentTypeKeyParam, body: ContentTypePatchRequest): Promise<ContentTypePatchResponse> => {
+    log.info("Patching content type {key}", { key: keyParam.key })
     const res = await client.PATCH("/contenttypes/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to patch content type {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentTypePatchResponse
   }
 
   const deleteContentType = async (keyParam: ContentTypeKeyParam): Promise<ContentTypeDeleteResponse | void> => {
+    log.info("Deleting content type {key}", { key: keyParam.key })
     const res = await client.DELETE("/contenttypes/{key}", { params: { path: keyParam } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to delete content type {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as ContentTypeDeleteResponse | void
   }
 

@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("propertygroups")
 
 type PropertyGroupListResponse = paths["/propertygroups"]["get"]["responses"][200]["content"]["application/json"]
 type PropertyGroupGetResponse = paths["/propertygroups/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -90,37 +94,58 @@ export function createPropertyGroups(client: TypedSdkClient): PropertyGroupsApi 
   // Implementation with optional parameter
   function propertygroups(key?: PropertyGroupKeyParam) {
     const listPropertyGroups = async (query?: PropertyGroupQueryParam): Promise<PropertyGroupListResponse> => {
+      log.debug("Listing property groups", { query })
       const res = await client.GET("/propertygroups", { params: { query } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to list property group: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as PropertyGroupListResponse
     }
 
     const getPropertyGroup = async (keyParam: PropertyGroupKeyParam): Promise<PropertyGroupGetResponse> => {
+      log.debug("Fetching property group {key}", { key: keyParam.key })
       const res = await client.GET("/propertygroups/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to fetch property group {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as PropertyGroupGetResponse
     }
 
     const createPropertyGroup = async (body: PropertyGroupCreateRequest): Promise<PropertyGroupCreateResponse> => {
+      log.info("Creating property group")
       const res = await client.POST("/propertygroups", { body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to create property group: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
+      log.info("Created property group {key}", { key: (res.data as PropertyGroupCreateResponse)?.key })
       return res.data as PropertyGroupCreateResponse
     }
 
     const patchPropertyGroup = async (keyParam: PropertyGroupKeyParam, body: PropertyGroupPatchRequest): Promise<PropertyGroupPatchResponse> => {
+      log.info("Patching property group {key}", { key: keyParam.key })
       const res = await client.PATCH("/propertygroups/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to patch property group {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as PropertyGroupPatchResponse
     }
 
     const deletePropertyGroup = async (keyParam: PropertyGroupKeyParam): Promise<PropertyGroupDeleteResponse | void> => {
+      log.info("Deleting property group {key}", { key: keyParam.key })
       const res = await client.DELETE("/propertygroups/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to delete property group {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as PropertyGroupDeleteResponse | void
     }
 

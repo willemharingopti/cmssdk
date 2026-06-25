@@ -1,0 +1,44 @@
+2026-06-24 12:03:33.205 +00:00 [DBG] cmssdk·api: Requesting new OAuth token...
+2026-06-24 12:03:33.751 +00:00 [DBG] cmssdk·api: "GET" "https://api.cms.optimizely.com/v1/content/versions"
+2026-06-24 12:03:34.096 +00:00 [DBG] cmssdk·api: 200 "https://api.cms.optimizely.com/v1/content/versions"
+2026-06-24 12:30:42.786 +00:00 [DBG] cmssdk·api: Requesting new OAuth token...
+2026-06-24 12:30:43.319 +00:00 [DBG] cmssdk·api: → "GET" "https://api.cms.optimizely.com/v1/content/versions"
+2026-06-24 12:30:43.324 +00:00 [TRC] cmssdk·api: → request Request {
+  bodyUsed: false,
+  headers: Headers {
+    authorization: "Bearer eyJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoiMWZhNTg4MzI4YzkwNDdhZTg2YmQ4YmY1YjMxMzUwY2QiLCJpbnN0YW5jZUlkIjoiNzIzZGZkNjU2MmRjNGVkMGI5OTQ4YzQzMjhkNDQxMGQiLCJzaXRlVXJsIjoiaHR0cHM6Ly9hcHAtZXBzYW51bm9zYWEwcG9hMXQwMDEuY21zLm9wdGltaXplbHkuY29tLyIsInNjb3BlIjoiYXBpOmFkbWluIiwiaWF0IjoxNzgyMzA0MjQzLCJpc3MiOiJvcHRpLWNvbnRlbnQtYXBpIiwiYXVkIjoib3B0aS1jb250ZW50LWFwaSIsImV4cCI6MTc4MjMwNDU0Mywic3ViIjoiMWZhNTg4MzI4YzkwNDdhZTg2YmQ4YmY1YjMxMzUwY2QifQ.U2hu3EZmFSlaLe_Kl8y-XZ2iQVEZTQDfPyyH_xsl-v4"
+  },
+  method: "GET",
+  redirect: "follow",
+  url: "https://api.cms.optimizely.com/v1/content/versions"
+}
+2026-06-24 12:30:43.798 +00:00 [DBG] cmssdk·api: ← 200 "https://api.cms.optimizely.com/v1/content/versions"
+2026-06-24 12:30:43.803 +00:00 [TRC] cmssdk·api: ← response Response {
+  body: ReadableStream {
+    locked: false,
+    state: "readable",
+    supportsBYOB: true
+  },
+  bodyUsed: false,
+  headers: Headers {
+    "access-control-allow-origin": "*",
+    "cf-cache-status": "DYNAMIC",
+    "cf-ray": "a10bbed0ddd3fe9b-AMS",
+    "cms-api-version": "v1-2026.6.17",
+    "content-type": "application/json; charset=utf-8",
+    date: "Wed, 24 Jun 2026 12:30:43 GMT",
+    server: "cloudflare",
+    "set-cookie": "",
+    "x-correlation-id": "a10bbed0ddd3fe9b",
+    "x-response-time": "446",
+    "x-started-at": "2026-06-24T12:30:43.343Z"
+  },
+  ok: true,
+  redirected: false,
+  status: 200,
+  statusText: "OK",
+  url: "https://api.cms.optimizely.com/v1/content/versions"
+}
+2026-06-24 12:31:15.261 +00:00 [DBG] cmssdk·api: Requesting new OAuth token...
+2026-06-24 12:31:15.409 +00:00 [DBG] cmssdk·api: → "GET" "https://api.cms.optimizely.com/v1/content/versions"
+2026-06-24 12:31:15.876 +00:00 [DBG] cmssdk·api: ← 200 "https://api.cms.optimizely.com/v1/content/versions"

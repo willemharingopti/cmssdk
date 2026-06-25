@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("bindings")
 
 type BindingListResponse = paths["/contenttypebindings"]["get"]["responses"][200]["content"]["application/json"]
 type BindingGetResponse = paths["/contenttypebindings/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -84,37 +88,58 @@ export function createBindings(client: TypedSdkClient): BindingsApi {
   // Implementation with optional parameter
   function bindings(key?: BindingKeyParam) {
     const listBindings = async (query?: BindingQueryParam): Promise<BindingListResponse> => {
+      log.debug("Listing bindings", { query })
       const res = await client.GET("/contenttypebindings", { params: { query } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to list binding: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as BindingListResponse
     }
 
     const getBinding = async (keyParam: BindingKeyParam): Promise<BindingGetResponse> => {
+      log.debug("Fetching binding {key}", { key: keyParam.key })
       const res = await client.GET("/contenttypebindings/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to fetch binding {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as BindingGetResponse
     }
 
     const createBinding = async (body: BindingCreateRequest): Promise<BindingCreateResponse> => {
+      log.info("Creating binding")
       const res = await client.POST("/contenttypebindings", { body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to create binding: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
+      log.info("Created binding {key}", { key: (res.data as BindingCreateResponse)?.key })
       return res.data as BindingCreateResponse
     }
 
     const patchBinding = async (keyParam: BindingKeyParam, body: BindingPatchRequest): Promise<BindingPatchResponse> => {
+      log.info("Patching binding {key}", { key: keyParam.key })
       const res = await client.PATCH("/contenttypebindings/{key}", { params: { path: keyParam },headers: {"content-type": "application/merge-patch+json"}, body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to patch binding {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as BindingPatchResponse
     }
 
     const deleteBinding = async (keyParam: BindingKeyParam): Promise<BindingDeleteResponse | void> => {
+      log.info("Deleting binding {key}", { key: keyParam.key })
       const res = await client.DELETE("/contenttypebindings/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to delete binding {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as BindingDeleteResponse | void
     }
 

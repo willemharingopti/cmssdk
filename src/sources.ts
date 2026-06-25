@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("sources")
 
 type ContentSourceListResponse = paths["/contentsources"]["get"]["responses"][200]["content"]["application/json"]
 type ContentSourceGetResponse = paths["/contentsources/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -84,37 +88,58 @@ export function createSources(client: TypedSdkClient): SourcesApi {
   // Implementation with optional parameter
   function sources(key?: ContentSourceKeyParam) {
     const listSources = async (query?: ContentSourceQueryParam): Promise<ContentSourceListResponse> => {
+      log.debug("Listing content sources", { query })
       const res = await client.GET("/contentsources", { params: { query } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to list content source: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as ContentSourceListResponse
     }
 
     const getSource = async (keyParam: ContentSourceKeyParam): Promise<ContentSourceGetResponse> => {
+      log.debug("Fetching content source {key}", { key: keyParam.key })
       const res = await client.GET("/contentsources/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to fetch content source {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as ContentSourceGetResponse
     }
 
     const createSource = async (body: ContentSourceCreateRequest): Promise<ContentSourceCreateResponse> => {
+      log.info("Creating content source")
       const res = await client.POST("/contentsources", { body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to create content source: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
+      log.info("Created content source {key}", { key: (res.data as ContentSourceCreateResponse)?.key })
       return res.data as ContentSourceCreateResponse
     }
 
     const patchSource = async (keyParam: ContentSourceKeyParam, body: ContentSourcePatchRequest): Promise<ContentSourcePatchResponse> => {
+      log.info("Patching content source {key}", { key: keyParam.key })
       const res = await client.PATCH("/contentsources/{key}", { params: { path: keyParam }, body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to patch content source {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as ContentSourcePatchResponse
     }
 
     const deleteSource = async (keyParam: ContentSourceKeyParam): Promise<ContentSourceDeleteResponse | void> => {
+      log.info("Deleting content source {key}", { key: keyParam.key })
       const res = await client.DELETE("/contentsources/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to delete content source {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as ContentSourceDeleteResponse | void
     }
 

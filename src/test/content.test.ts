@@ -71,9 +71,14 @@ Deno.test("content", async (test) => {
    let containerKey: string | undefined
    let copyKey: string | undefined
    let versionId: string | undefined
-   // Separate content item created via the multipart upload() endpoint.
-   const uploadKey = crypto.randomUUID().replaceAll("-", "")
-   let uploadCreated = false
+   // Media items created via the multipart upload() endpoint. We upload the real
+   // butterfly assets from the project root (a PNG and an SVG) and assert each one
+   // round-trips byte-for-byte through media().
+   const uploads = [
+      { key: crypto.randomUUID().replaceAll("-", ""), file: "butterfly-png.png", name: "butterfly.png", type: "image/png" },
+      { key: crypto.randomUUID().replaceAll("-", ""), file: "butterfly-svg.svg", name: "butterfly.svg", type: "image/svg+xml" },
+   ]
+   const uploadedKeys: string[] = []
 
    try {
       await test.step("post (create)", async () => {
@@ -185,75 +190,81 @@ Deno.test("content", async (test) => {
          }
       })
 
-      // Upload a media item via the multipart/form-data upload() endpoint, then
-      // confirm the binary round-trips through media(). Creating the media node is
+      // Upload media items via the multipart/form-data upload() endpoint, then
+      // confirm the binary round-trips through media(). We upload a PNG and an SVG
+      // (the butterfly assets in the project root). Creating the media node is
       // best-effort (depends on TEST_MEDIA_CONTENT_TYPE existing on the instance);
       // once it succeeds, the round-trip is asserted strictly.
-      await test.step("upload (multipart media)", async () => {
-         const containerOf = containerKey as string
-         const fileBody = `hello sdk upload ${uploadKey}`
-         // The file part needs a filename WITH an extension, so pass a File (a bare
-         // Blob has no name and the API rejects it: "File name is missing an extension").
-         const file = new File([new TextEncoder().encode(fileBody)], "sdk-test.txt", { type: "text/plain" })
+      for (const u of uploads) {
+         await test.step(`upload (multipart media: ${u.name})`, async () => {
+            const containerOf = containerKey as string
+            // Read the real asset bytes from the project root (two levels up from
+            // this test file). The file part needs a filename WITH an extension, so
+            // pass a File (a bare Blob has no name and the API rejects it).
+            const bytes = await Deno.readFile(new URL(`../../${u.file}`, import.meta.url))
+            const file = new File([bytes], u.name, { type: u.type })
 
-         try {
-            await client.content().upload({
-               content: {
-                  key: uploadKey,
-                  contentType: TEST_MEDIA_CONTENT_TYPE,
-                  container: containerOf,
-                  initialVersion: { displayName: `${displayName}-media`, locale: "en" },
+            try {
+               await client.content().upload({
+                  content: {
+                     key: u.key,
+                     contentType: TEST_MEDIA_CONTENT_TYPE,
+                     container: containerOf,
+                     initialVersion: { displayName: `${displayName}-${u.name}`, locale: "en" },
+                  },
+                  file,
+               })
+               uploadedKeys.push(u.key)
+            } catch (err) {
+               console.warn(
+                  `upload skipped: could not create "${TEST_MEDIA_CONTENT_TYPE}" media. ` +
+                     `Set OPTIMIZELY_CMS_TEST_MEDIA_CONTENTTYPE to a media type on your instance. ` +
+                     `Original error: ${(err as Error).message}`,
+               )
+               return
+            }
+
+            // The node read is eventually consistent and 404s until visible, so poll.
+            const node = await poll(
+               async () => {
+                  try {
+                     return await client.content({ key: u.key }).get()
+                  } catch {
+                     return undefined
+                  }
                },
-               file,
-            })
-            uploadCreated = true
-         } catch (err) {
-            console.warn(
-               `upload skipped: could not create "${TEST_MEDIA_CONTENT_TYPE}" media. ` +
-                  `Set OPTIMIZELY_CMS_TEST_MEDIA_CONTENTTYPE to a media type on your instance. ` +
-                  `Original error: ${(err as Error).message}`,
+               (n) => n?.key === u.key,
+               30,
             )
-            return
-         }
+            assert.ok(node, "uploaded media node never became retrievable")
+            assert.equal(node.contentType, TEST_MEDIA_CONTENT_TYPE, "uploaded node contentType mismatch")
 
-         // The node read is eventually consistent and 404s until visible, so poll.
-         const node = await poll(
-            async () => {
-               try {
-                  return await client.content({ key: uploadKey }).get()
-               } catch {
-                  return undefined
-               }
-            },
-            (n) => n?.key === uploadKey,
-            30,
-         )
-         assert.ok(node, "uploaded media node never became retrievable")
-         assert.equal(node.contentType, TEST_MEDIA_CONTENT_TYPE, "uploaded node contentType mismatch")
+            const versionsPage = await poll(
+               () => client.content({ key: u.key }).versions(),
+               (p) => (p.items?.length ?? 0) > 0,
+               30,
+            )
+            const mediaVersion = versionsPage.items?.[0]?.version
+            assert.ok(mediaVersion, "no version available for the uploaded media")
 
-         const versionsPage = await poll(
-            () => client.content({ key: uploadKey }).versions(),
-            (p) => (p.items?.length ?? 0) > 0,
-            30,
-         )
-         const mediaVersion = versionsPage.items?.[0]?.version
-         assert.ok(mediaVersion, "no version available for the uploaded media")
-
-         // The media bytes can also lag, so poll until the stream returns 200.
-         const media = await poll(
-            async () => {
-               try {
-                  return await client.content({ key: uploadKey, version: mediaVersion }).media()
-               } catch {
-                  return undefined
-               }
-            },
-            (r) => r?.status === 200,
-            30,
-         )
-         assert.ok(media && media.status === 200, "media endpoint did not return the uploaded file")
-         assert.equal(await media.text(), fileBody, "uploaded file bytes did not round-trip via media()")
-      })
+            // The media bytes can also lag, so poll until the stream returns 200.
+            const media = await poll(
+               async () => {
+                  try {
+                     return await client.content({ key: u.key, version: mediaVersion }).media()
+                  } catch {
+                     return undefined
+                  }
+               },
+               (r) => r?.status === 200,
+               30,
+            )
+            assert.ok(media && media.status === 200, "media endpoint did not return the uploaded file")
+            const got = new Uint8Array(await media.arrayBuffer())
+            assert.equal(got.length, bytes.length, `${u.name}: uploaded byte length did not round-trip via media()`)
+            assert.ok(got.every((b, i) => b === bytes[i]), `${u.name}: uploaded file bytes did not round-trip via media()`)
+         })
+      }
    } finally {
       // Cleanup so the test is repeatable. Best-effort: log but don't fail on cleanup errors.
       if (copyKey) {
@@ -263,7 +274,7 @@ Deno.test("content", async (test) => {
             console.warn(`cleanup of copy "${copyKey}" failed: ${(e as Error).message}`)
          }
       }
-      if (uploadCreated) {
+      for (const uploadKey of uploadedKeys) {
          try {
             await client.content({ key: uploadKey }).delete()
          } catch (e) {

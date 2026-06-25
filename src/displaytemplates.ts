@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("displaytemplates")
 
 type DisplayTemplateListResponse = paths["/displaytemplates"]["get"]["responses"][200]["content"]["application/json"]
 type DisplayTemplateGetResponse = paths["/displaytemplates/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -84,37 +88,58 @@ export function createDisplayTemplates(client: TypedSdkClient): DisplayTemplates
   // Implementation with optional parameter
   function displaytemplates(key?: DisplayTemplateKeyParam) {
     const listDisplayTemplates = async (query?: DisplayTemplateQueryParam): Promise<DisplayTemplateListResponse> => {
+      log.debug("Listing display templates", { query })
       const res = await client.GET("/displaytemplates", { params: { query } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to list display template: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as DisplayTemplateListResponse
     }
 
     const getDisplayTemplate = async (keyParam: DisplayTemplateKeyParam): Promise<DisplayTemplateGetResponse> => {
+      log.debug("Fetching display template {key}", { key: keyParam.key })
       const res = await client.GET("/displaytemplates/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to fetch display template {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as DisplayTemplateGetResponse
     }
 
     const createDisplayTemplate = async (body: DisplayTemplateCreateRequest): Promise<DisplayTemplateCreateResponse> => {
+      log.info("Creating display template")
       const res = await client.POST("/displaytemplates", { body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to create display template: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
+      log.info("Created display template {key}", { key: (res.data as DisplayTemplateCreateResponse)?.key })
       return res.data as DisplayTemplateCreateResponse
     }
 
     const patchDisplayTemplate = async (keyParam: DisplayTemplateKeyParam, body: DisplayTemplatePatchRequest): Promise<DisplayTemplatePatchResponse> => {
+      log.info("Patching display template {key}", { key: keyParam.key })
       const res = await client.PATCH("/displaytemplates/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to patch display template {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as DisplayTemplatePatchResponse
     }
 
     const deleteDisplayTemplate = async (keyParam: DisplayTemplateKeyParam): Promise<DisplayTemplateDeleteResponse | void> => {
+      log.info("Deleting display template {key}", { key: keyParam.key })
       const res = await client.DELETE("/displaytemplates/{key}", { params: { path: keyParam } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to delete display template {key}: {error}", { key: keyParam.key, error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as DisplayTemplateDeleteResponse | void
     }
 

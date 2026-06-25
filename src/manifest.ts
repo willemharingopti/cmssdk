@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("manifest")
 
 type ManifestExportResponse = paths["/manifest"]["get"]["responses"][200]["content"]["application/json"]
 type ManifestExportQuery = paths["/manifest"]["get"]["parameters"]["query"]
@@ -43,16 +47,24 @@ export interface ManifestApi {
 export function createManifest(client: TypedSdkClient): ManifestApi {
   return () => ({
     export: async (query?: ManifestExportQuery): Promise<ManifestExportResponse> => {
+      log.debug("Exporting manifest", { query })
       const res = await client.GET("/manifest", { params: { query } })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to export manifest: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as ManifestExportResponse
     },
 
     import: async (body: ManifestImportRequest): Promise<ManifestImportResponse> => {
+      log.info("Importing manifest")
       const res = await client.POST("/manifest", { body })
       const errorMessage = handleerror(res)
-      if (errorMessage) throw new Error(errorMessage)
+      if (errorMessage) {
+        log.error("Failed to import manifest: {error}", { error: errorMessage })
+        throw new Error(errorMessage)
+      }
       return res.data as ManifestImportResponse // undefined on 202 Accepted
     },
   })

@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("blueprints")
 
 type BlueprintListResponse = paths["/blueprints"]["get"]["responses"][200]["content"]["application/json"]
 type BlueprintGetResponse = paths["/blueprints/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -119,37 +123,58 @@ export function createBlueprints(client: TypedSdkClient): BlueprintsApi {
   // Implementation with optional parameter
   function blueprints(key?: BlueprintKeyParam) {
   const listBlueprints = async (query?: BlueprintQueryParam): Promise<BlueprintListResponse> => {
+    log.debug("Listing blueprints", { query })
     const res = await client.GET("/blueprints", { params: { query } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to list blueprint: {error}", { error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as BlueprintListResponse
   }
 
   const getBlueprint = async (keyParam: BlueprintKeyParam): Promise<BlueprintGetResponse> => {
+    log.debug("Fetching blueprint {key}", { key: keyParam.key })
     const res = await client.GET("/blueprints/{key}", { params: { path: keyParam } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to fetch blueprint {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as BlueprintGetResponse
   }
 
   const createBlueprint = async (body: BlueprintCreateRequest): Promise<BlueprintCreateResponse> => {
+    log.info("Creating blueprint")
     const res = await client.POST("/blueprints", { body: body as unknown as RawBlueprintCreate })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to create blueprint: {error}", { error: errorMessage })
+      throw new Error(errorMessage)
+    }
+    log.info("Created blueprint {key}", { key: (res.data as BlueprintCreateResponse)?.key })
     return res.data as BlueprintCreateResponse
   }
 
   const patchBlueprint = async (keyParam: BlueprintKeyParam, body: BlueprintPatchRequest): Promise<BlueprintPatchResponse> => {
+    log.info("Patching blueprint {key}", { key: keyParam.key })
     const res = await client.PATCH("/blueprints/{key}", { params: { path: keyParam }, headers: {"content-type": "application/merge-patch+json"}, body })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to patch blueprint {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as BlueprintPatchResponse
   }
 
   const deleteBlueprint = async (keyParam: BlueprintKeyParam): Promise<BlueprintDeleteResponse | void> => {
+    log.info("Deleting blueprint {key}", { key: keyParam.key })
     const res = await client.DELETE("/blueprints/{key}", { params: { path: keyParam } })
     const errorMessage = handleerror(res)
-    if (errorMessage) throw new Error(errorMessage)
+    if (errorMessage) {
+      log.error("Failed to delete blueprint {key}: {error}", { key: keyParam.key, error: errorMessage })
+      throw new Error(errorMessage)
+    }
     return res.data as BlueprintDeleteResponse | void
   }
 

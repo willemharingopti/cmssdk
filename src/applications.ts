@@ -1,6 +1,10 @@
 import type { TypedSdkClient } from "./openapi/typedsdk.ts"
 import type { paths } from "../generated/openapispec.ts"
 import { handleerror } from "./utils.ts"
+import { entityLogger } from "./logger/logging.ts"
+
+// Entity-level logger scoped to this resource.
+const log = entityLogger.getChild("applications")
 
 type ApplicationsListResponse = paths["/applications"]["get"]["responses"][200]["content"]["application/json"]
 type ApplicationGetResponse = paths["/applications/{key}"]["get"]["responses"][200]["content"]["application/json"]
@@ -103,37 +107,58 @@ export function createApplications(client: TypedSdkClient): ApplicationsApi {
 
   function applications(key?: ApplicationKeyParam) {
     const listApplications = async (query?: ApplicationQueryParam): Promise<ApplicationsListResponse> => {
+        log.debug("Listing applications", { query })
         const res = await client.GET("/applications", {params: {query: query}})
         const errorMessage = handleerror(res)
-        if (errorMessage) throw new Error(errorMessage)
+        if (errorMessage) {
+            log.error("Failed to list application: {error}", { error: errorMessage })
+            throw new Error(errorMessage)
+        }
         return res.data as ApplicationsListResponse
     }
 
     const getApplication = async (keyParam: ApplicationKeyParam): Promise<ApplicationGetResponse> => {
+        log.debug("Fetching application {key}", { key: keyParam.key })
         const res = await client.GET(`/applications/{key}`, { params: { path: keyParam } })
         const errorMessage = handleerror(res)
-        if (errorMessage) throw new Error(errorMessage)
+        if (errorMessage) {
+            log.error("Failed to fetch application {key}: {error}", { key: keyParam.key, error: errorMessage })
+            throw new Error(errorMessage)
+        }
         return res.data as ApplicationGetResponse
     }
 
     const deleteApplication = async (keyParam: ApplicationKeyParam): Promise<ApplicationDeleteResponse | void> => {
+        log.info("Deleting application {key}", { key: keyParam.key })
         const res = await client.DELETE(`/applications/{key}`, { params: { path: keyParam } })
         const errorMessage = handleerror(res)
-        if (errorMessage) throw new Error(errorMessage)
+        if (errorMessage) {
+            log.error("Failed to delete application {key}: {error}", { key: keyParam.key, error: errorMessage })
+            throw new Error(errorMessage)
+        }
         return res.data as ApplicationDeleteResponse | void
     }
 
     const patchApplication = async (keyParam: ApplicationKeyParam, body: ApplicationPatchRequest): Promise<ApplicationPatchResponse> => {
+        log.info("Patching application {key}", { key: keyParam.key })
         const res = await client.PATCH(`/applications/{key}`, { params: { path: keyParam }, body, headers: {"content-type": "application/merge-patch+json"} })
         const errorMessage = handleerror(res)
-        if (errorMessage) throw new Error(errorMessage)
+        if (errorMessage) {
+            log.error("Failed to patch application {key}: {error}", { key: keyParam.key, error: errorMessage })
+            throw new Error(errorMessage)
+        }
         return res.data as ApplicationPatchResponse
     }
 
     const createApplication = async (body: ApplicationCreateRequest): Promise<ApplicationCreateResponse> => {
+        log.info("Creating application")
         const res = await client.POST("/applications", { body: body as unknown as RawApplicationCreate })
         const errorMessage = handleerror(res)
-        if (errorMessage) throw new Error(errorMessage)
+        if (errorMessage) {
+            log.error("Failed to create application: {error}", { error: errorMessage })
+            throw new Error(errorMessage)
+        }
+        log.info("Created application {key}", { key: (res.data as ApplicationCreateResponse)?.key })
         return res.data as ApplicationCreateResponse
     }
 

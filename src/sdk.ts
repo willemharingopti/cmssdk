@@ -15,6 +15,7 @@ import { createManifest } from "./manifest.ts"
 import { createPropertyFormats } from "./propertyformats.ts"
 import { createPropertyGroups } from "./propertygroups.ts"
 import { typedsdk, type iOptions } from "./openapi/typedsdk.ts"
+import { configureLogging } from "./logger/logging.ts"
 
 import type {
     iApplication, iBlueprints, iContent, iContentTypes,
@@ -24,6 +25,7 @@ import type {
 
 export { keyFromEntryPoint } from "./utils.ts"
 export type { iOptions } from "./openapi/typedsdk.ts"
+export { apiLogger, configureLogging, entityLogger, type LoggingOptions } from "./logger/logging.ts"
 
 dotenv.config({quiet: true})
 
@@ -78,6 +80,18 @@ export const cmssdk = (options?: iOptions): CmsSdkInstance => {
     if (!resolved.client_id) throw new Error("Missing required environment variables: OPTIMIZELY_CMS_CLIENT_ID")
     if (!resolved.client_secret) throw new Error("Missing required environment variables: OPTIMIZELY_CMS_CLIENT_SECRET")
     if (!resolved.base_url) throw new Error("Missing required environment variables: OPTIMIZELY_CMS_BASE_URL")
+
+    // Convenience: wire up logging from the cmssdk call. This is fire-and-forget
+    // because cmssdk is synchronous; for guaranteed capture of the very first
+    // request, call `await configureLogging(...)` yourself before cmssdk().
+    // `debug: true` is shorthand for mirroring logs to the console.
+    if (options?.logging || options?.debug) {
+        configureLogging(options.logging ?? { console: true }).catch((err) =>
+            console.error("cmssdk: failed to configure logging", err)
+        )
+    }
+
+
 
     // No explicit options means use the shared, token-caching client.
     const client = typedsdk(resolved, !options)

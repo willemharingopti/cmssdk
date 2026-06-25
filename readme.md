@@ -74,6 +74,38 @@ Credentials can be passed through the constructor (otherwise read from `OPTIMIZE
 const client = cmssdk({ client_id: "...", client_secret: "...", base_url: "https://api.cms.optimizely.com" })
 ```
 
+## Logging
+
+The SDK logs through [LogTape](https://logtape.org) but stays silent until you wire up a sink with `configureLogging`. Logs are split into two categories under the `cmssdk` root: `["cmssdk", "api"]` for raw HTTP request/response traffic and `["cmssdk", "entity"]` for high-level resource operations.
+
+Because LogTape's configuration is process-global, call `configureLogging` once at application startup — before creating the client — so the very first requests are captured:
+
+```typescript
+import { cmssdk, configureLogging } from "@willemharingopti/cmssdk"
+
+await configureLogging({ file: "cms.log", console: true })
+
+const client = cmssdk()
+```
+
+`configureLogging` accepts a `LoggingOptions` object:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `file` | `string` | — | Write logs to this file path. Omit to skip the file sink. |
+| `console` | `boolean` | `false` | Mirror logs to the console as well. |
+| `level` | `LogLevel` | `"debug"` | Lowest level recorded (see below). |
+| `reset` | `boolean` | `true` | Reset any previous LogTape configuration first. |
+
+The `level` controls verbosity across both categories with a single threshold:
+
+- `"trace"` — full Request/Response objects (headers, body, the lot) + URL lines + entity ops
+- `"debug"` — HTTP method/URL lines + entity ops
+- `"info"` — entity-level operations only
+- `"warning"` (or higher) — warnings/errors only
+
+For full control you can also wire the exported `apiLogger` and `entityLogger` into LogTape's own `configure` directly.
+
 ## Roadmap
 - Everything in the public CMS API surface is now wrapped. Future work: richer enhanced
   request types (string-reference hints) for the newly added resources.
