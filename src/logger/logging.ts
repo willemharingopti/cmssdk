@@ -12,17 +12,17 @@
  * LogTape configuration is process-global, call it once at application start.
  */
 
-import { configure, getConsoleSink, getLogger, type LogLevel, type Sink } from "@logtape/logtape"
+import { configure, getConsoleSink, getLogger, type Logger, type LogLevel, type Sink } from "@logtape/logtape"
 import { getFileSink } from "@logtape/file"
 
 /** Root category for everything this SDK logs. */
 export const ROOT_CATEGORY = "cmssdk"
 
 /** api-level: raw HTTP request/response captured in the fetch middleware. */
-export const apiLogger = getLogger([ROOT_CATEGORY, "api"])
+export const apiLogger: Logger = getLogger([ROOT_CATEGORY, "api"])
 
 /** entity-level: high-level operations emitted from the resource modules. */
-export const entityLogger = getLogger([ROOT_CATEGORY, "entity"])
+export const entityLogger: Logger = getLogger([ROOT_CATEGORY, "entity"])
 
 /** Options controlling where and at what level SDK logs are written. */
 export interface LoggingOptions {
